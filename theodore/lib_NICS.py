@@ -325,9 +325,12 @@ class NICS_parser_QC(NICS_parser):
                     print("Finished parsing %s"%logfile)
                     break
 
-                if line[0:3] == '@He':
-                    (x, y, z) = map(float, line.split()[1:4])
-                    self.NICS_data.append(NICS_point(x, y, z))
+                if '  GH' in line and not 'atom' in line.lower():
+                    words = line.split()
+                    if words[1] == 'GH':
+                        print(line)
+                        (x, y, z) = map(float, words[2:5])
+                        self.NICS_data.append(NICS_point(x, y, z))
 
                 if 'ATOM  GH' in line:
                     while True:

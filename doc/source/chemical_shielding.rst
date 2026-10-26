@@ -10,7 +10,7 @@ Visualisation of chemical shielding tensors (VIST)
 The VIST method [`Eur. J. Org. Chem., (2021) <https://doi.org/10.1002/ejoc.202100352>`_] allows to visualise chemical shielding tensors in the context of the molecular structure showing local variations of the shielding along with its anisotropy. The method proceeds in the following order
 
 * Computation of shielding tensors
-* Interfaces exists for Gaussian, Q-Chem and Turbomole.
+* Interfaces exists for Gaussian, Q-Chem,  Turbomole, and Dalton.
 * Creation of VIST input via ``theodore plot_vist``
 * Rendering of VIST plot in `VMD <https://www.ks.uiuc.edu/Research/vmd/>`_
 
@@ -25,14 +25,14 @@ Run ``theodore plot_vist -h`` to see all command line options
 
     plot_VIST.py [options] <logfile1> <logfile2>
     Command line options:
-     -h, -H, --help: print this help
-     -v, --vist    : VIST for only these dummy atoms, e.g. -v '0 3 5'
-     -o            : Name of output file (for VMD)
-     -s, --scale   : Scale factor VIST dumb-bells
-     -c, --coor    : Create coordinate files (using cclib)
-     -p            : Render and plot all tensors separately
-     -l/--lab_min  : Add labels for eigenvalues above this value (in ppm), e.g. -l 10
-     -q/--qccode   : Quantum chemistry code (g09, qchem, turbomole)
+    -h/--help            | show this help message and exit                   
+    -v/--vist            | VIST for only these dummy atoms, e.g. -v '0 3 5'  
+    -o/--ofile           | Name of output file (for VMD)                     
+    -s/--scale           | Scale factor for VIST dumb-bells                  
+    -c/--coor            | Create coordinate files (using cclib)
+    -p/--plot_all        | Render and plot all tensors separately
+    -l/--lab_min         | Add labels for eigenvalues above this value (in ppm), e.g. -l 10                                    
+    -q/--qccode          | Quantum chemistry code (g09, qchem, turbomole, dalton)
 
 Simple example
 ______________
