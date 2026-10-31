@@ -6,6 +6,7 @@ from .analyze_sden import AnalyzeSden
 from .analyze_NOs import AnalyzeNOs
 from .parse_libwfa import ParseLibwfa
 from .plot_vist import PlotVist
+from .nics_bq import NICSBq
 from .plot_OmFrag import PlotOmFrag
 from .plot_Om_bars import PlotOmBars
 from .plot_frag_decomp import PlotFragDecomp

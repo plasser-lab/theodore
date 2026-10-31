@@ -32,7 +32,8 @@ Run ``theodore plot_vist -h`` to see all command line options
     -c/--coor            | Create coordinate files (using cclib)
     -p/--plot_all        | Render and plot all tensors separately
     -l/--lab_min         | Add labels for eigenvalues above this value (in ppm), e.g. -l 10                                    
-    -q/--qccode          | Quantum chemistry code (g09, qchem, turbomole, dalton)
+    -q/--qccode          | Quantum chemistry code (g09, g16 or gaussian, qchem, turbomole, dalton)
+    -r/--ring            | Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis, e.g. -r '4 5 7 9 8 6' (Gaussian only)
 
 Simple example
 ______________
@@ -104,3 +105,40 @@ The files are loaded into VMD via
     vmd -e VIST.vmd
 
 Initially all geometries are superposed on top of each other. To hide some of the molecules use the ``D`` option (part of ``T A D F Molecule``) in the VMD Main menu.
+
+Gaussian: orientation of the ghost atoms
+________________________________________
+
+Gaussian reports the shielding tensors in the *standard orientation* unless ``NoSymm`` is given.
+``plot_vist`` therefore takes the Bq positions from the last orientation table printed before the
+shielding tensors (the standard orientation if present, otherwise the input orientation), so that
+coordinates and tensors are always in the same frame.
+In practice Gaussian usually turns symmetry off when ghost atoms are present
+("Cannot cope with ghost atoms") and prints only the input orientation; both frames then coincide.
+The Bq atoms are matched to their tensors through the centre number. This also covers Bq atoms
+given as Z-matrix lines or with freeze codes (``Bq 0 x y z``).
+If a log file contains several shielding sections (e.g. ``Opt NMR`` or ``--Link1--`` jobs),
+only the last one is used. The same parser is used for Gaussian 09 and Gaussian 16.
+
+NICS(0), NICS(1) and NICS_zz
+____________________________
+
+Placing the ghost atoms on the ring axis is done with ``theodore nics_bq``.
+It reads an xyz file and the ring atoms (in their order around the ring) and prints the Bq lines
+to be appended to the Gaussian molecule specification::
+
+    theodore nics_bq molecule.xyz '1 2 3 4 5 6' -H '0 1' -b
+    theodore nics_bq molecule.xyz '1 2 3 4 5 6' -s '0 3 0.5'    # scan along the ring axis
+
+The ring centroid is the mean of the ring atom positions and the ring normal is the normal of the
+least-squares plane through them, oriented by the right-hand rule with respect to the atom order.
+
+After the NMR job, the ``-r`` option of ``plot_vist`` evaluates all ghost atoms that lie on the
+ring axis (within 0.05 A)::
+
+    theodore plot_vist -r '1 2 3 4 5 6' gaussian.log
+
+The table (also written to ``NICS_ring.txt``) lists the height above the ring centroid, the
+isotropic value ``NICS_iso`` and the out-of-plane component ``NICS_zz = -n.sigma.n`` with ``n``
+the ring normal, and labels the NICS(0) and NICS(+-1) points. NICS values follow the usual
+convention NICS = -sigma. The ring atom numbers refer to the order of the real atoms in the log file.

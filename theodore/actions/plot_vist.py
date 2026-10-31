@@ -31,8 +31,10 @@ class PlotVist(Action):
     lab_min = 1000. :: float, alias=l
     # Log files to be parsed
     logfiles = :: list(str)
-    # Quantum chemistry code (g09, qchem, turbomole, dalton)
+    # Quantum chemistry code (g09, g16 or gaussian, qchem, turbomole, dalton)
     qccode = g09 :: str, alias=q
+    # Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis, e.g. -r '4 5 7 9 8 6' (Gaussian only)
+    ring = :: ilist, optional, alias=r
     """
 
     _colt_description = "Read NICS values and prepare VIST plot"
@@ -46,7 +48,7 @@ class PlotVist(Action):
     })
 
     @timeit
-    def run(vist, ofile, scale, coor, plot_all, lab_min, logfiles, qccode):
+    def run(vist, ofile, scale, coor, plot_all, lab_min, logfiles, qccode, ring):
         if vist is not None and len(vist) == 0:
             vist = None
         theo_header.print_header('Read NICS values and prepare VIST plot', cfile='plot_VIST.py')
@@ -57,7 +59,7 @@ class PlotVist(Action):
         ioptions = input_options.dens_ana_options(ifile=None, check_init=False)
         ioptions['rtype'] = 'cclib'
 
-        if qccode == 'g09':
+        if qccode in ['g09', 'g16', 'gaussian']:
             nv = lib_NICS.NICS_parser_g09()
         elif qccode == 'qchem':
             nv = lib_NICS.NICS_parser_QC()
@@ -71,6 +73,9 @@ class PlotVist(Action):
         for ilog, logfile in enumerate(logfiles):
             nv.read(logfile)
             nv.print_data()
+            if ring is not None and len(ring) > 0:
+                rfile = 'NICS_ring.txt' if len(logfiles) == 1 else 'NICS_ring%i.txt'%ilog
+                nv.ring_analysis(ring, outfile=rfile)
             if coor: # create coor file to be read by VMD
                 ioptions['rfile'] = logfile
                 ccparser = cclib_interface.file_parser_cclib(ioptions)
