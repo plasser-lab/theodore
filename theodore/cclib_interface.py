@@ -328,6 +328,55 @@ class file_parser_cclib(file_parser.file_parser_base):
 
         return mos
 
+    def read_mos_from(self, mo_rfile, lvprt=1, en_thresh=1.e-4, coor_thresh=1.e-4):
+        """
+        Read the MOs from a separate log file (parsed with cclib), e.g. for
+        Gaussian TDDFT jobs without pop=full where the orbitals were read
+        (guess=read) from a single point with pop=full.
+        The two files are checked for consistency: same atoms and geometry,
+        same SCF energy and number of basis functions, and the same occupied
+        orbital energies if both files contain them.
+        """
+        print("\nReading MOs from separate file %s"%mo_rfile)
+        mo_data, mo_prog = self.get_data(self.ioptions['rtype'], mo_rfile)
+
+        if not hasattr(mo_data, 'mocoeffs'):
+            raise error_handler.MsgError("No MO coefficients in %s (use pop=full for Gaussian)"%mo_rfile)
+
+        errors = []
+        if hasattr(self.data, 'nbasis') and self.data.nbasis != mo_data.nbasis:
+            errors.append("number of basis functions: %i / %i"%(self.data.nbasis, mo_data.nbasis))
+        if not numpy.array_equal(self.data.atomnos, mo_data.atomnos):
+            errors.append("atoms differ")
+        else:
+            dcoor = numpy.max(abs(numpy.array(self.data.atomcoords[-1]) - numpy.array(mo_data.atomcoords[-1])))
+            if dcoor > coor_thresh:
+                errors.append("geometries differ by up to %.2e A (same orientation needed)"%dcoor)
+        if hasattr(self.data, 'scfenergies') and hasattr(mo_data, 'scfenergies'):
+            # scfenergies are in eV in cclib
+            den = abs(self.data.scfenergies[-1] - mo_data.scfenergies[-1]) / units.energy['eV']
+            if den > en_thresh:
+                errors.append("SCF energies differ by %.2e Eh"%den)
+        if hasattr(self.data, 'moenergies') and hasattr(mo_data, 'moenergies'):
+            nocc = min(self.data.homos[0], mo_data.homos[0]) + 1
+            if self.data.homos[0] != mo_data.homos[0]:
+                errors.append("HOMO index: %i / %i"%(self.data.homos[0], mo_data.homos[0]))
+            elif nocc > 0:
+                den = numpy.max(abs(numpy.array(self.data.moenergies[0][:nocc]) - numpy.array(mo_data.moenergies[0][:nocc]))) / units.energy['eV']
+                if den > en_thresh:
+                    errors.append("occupied orbital energies differ by up to %.2e Eh"%den)
+
+        if len(errors) > 0:
+            raise error_handler.MsgError("%s and %s are not consistent:\n  "%(self.ioptions['rfile'], mo_rfile) + "\n  ".join(errors))
+        if lvprt >= 1:
+            print(" Consistency of %s and %s checked (geometry, SCF energy, orbital energies)"%(self.ioptions['rfile'], mo_rfile))
+
+        mos = MO_set_cclib(file = None)
+        do_Alpha = (self.ioptions['spin'] >= 0)
+        mos.read(mo_data, lvprt=2, do_Alpha=do_Alpha)
+
+        return mos
+
     def ret_struc(self,lvprt=1):
         struc = structure_cclib()
         struc.read_cclib(self.data)
