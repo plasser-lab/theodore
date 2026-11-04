@@ -124,12 +124,14 @@ the default; the previous name ``g09`` is still accepted).
 NICS(0), NICS(1) and NICS_zz
 ____________________________
 
-Placing the ghost atoms on the ring axis is done with ``theodore nics_bq``.
-It reads an xyz file and the ring atoms (in their order around the ring) and prints the Bq lines
-to be appended to the Gaussian molecule specification::
+Placing the ghost atoms on the ring axis is done with ``theodore nics_prep``.
+It reads an xyz file and the ring atoms (in their order around the ring) and prints the ghost atom
+lines to be added to the input of the quantum chemistry code (option ``-q/--qccode``).
+Currently only Gaussian is implemented (``-q gaussian``, the default), where the Bq lines are appended
+to the molecule specification::
 
-    theodore nics_bq molecule.xyz '1 2 3 4 5 6' -H '0 1' -b
-    theodore nics_bq molecule.xyz '1 2 3 4 5 6' -s '0 3 0.5'    # scan along the ring axis
+    theodore nics_prep molecule.xyz '1 2 3 4 5 6' -H '0 1' -b
+    theodore nics_prep molecule.xyz '1 2 3 4 5 6' -s '0 3 0.5'    # scan along the ring axis
 
 The ring centroid is the mean of the ring atom positions and the ring normal is the normal of the
 least-squares plane through them, oriented by the right-hand rule with respect to the atom order.

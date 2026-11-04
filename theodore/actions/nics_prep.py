@@ -5,13 +5,14 @@ from colt.lazyimport import LazyImportCreator, LazyImporter
 with LazyImportCreator() as importer:
     theo_header = importer.lazy_import_as('..theo_header', 'theo_header')
     lib_NICS = importer.lazy_import_as('..lib_NICS', 'lib_NICS')
+    error_handler = importer.lazy_import_as('..error_handler', 'error_handler')
 
 
-class NICSBq(Action):
+class NICSPrep(Action):
 
-    name = 'nics_bq'
+    name = 'nics_prep'
 
-    _colt_description = 'Place ghost atoms (Bq) on a ring axis for NICS calculations'
+    _colt_description = 'Ghost atoms on a ring axis for NICS calculations'
 
     _user_input = """
     # Molecular structure in xyz format (Angstrom)
@@ -24,18 +25,22 @@ class NICSBq(Action):
     both_sides = false :: bool, alias=b
     # Scan along the ring axis instead: 'hmin hmax step', e.g. -s '0 3 0.5'
     scan = :: flist, optional, alias=s
-    # Write the Bq lines to this file (in addition to the screen)
+    # Write the ghost atom lines to this file (in addition to the screen)
     ofile = :: str, optional, alias=o
+    # Quantum chemistry code (currently only gaussian)
+    qccode = gaussian :: str, alias=q
     """
 
     _lazy_imports = LazyImporter({
             '..theo_header': 'theo_header',
             '..lib_NICS': 'lib_NICS',
+            '..error_handler': 'error_handler',
     })
 
-    def run(xyzfile, ring, heights, both_sides, scan, ofile):
+    def run(xyzfile, ring, heights, both_sides, scan, ofile, qccode):
         theo_header.print_header(__class__._colt_description)
 
+        # General part: ghost atom positions on the ring axis
         coords = read_xyz(xyzfile)
         for iat in ring:
             if not 1 <= iat <= len(coords):
@@ -53,18 +58,24 @@ class NICSBq(Action):
         print("Ring centroid: (% .5f, % .5f, % .5f)"%tuple(centroid))
         print("Ring normal:   (% .5f, % .5f, % .5f)"%tuple(normal))
         print("Heights (A):", ' '.join('%.3f'%h for h in hlist))
-        print("\nAppend these lines to the molecule specification of the Gaussian input.")
-        print("The NICS values are then obtained from the Bq shielding tensors,")
-        print("e.g. with: theodore plot_vist -r '%s' <logfile>\n"%' '.join(str(iat) for iat in ring))
 
-        lines = lib_NICS.gaussian_bq_lines(points)
+        # Program specific part: input lines for the ghost atoms
+        if qccode in ['gaussian', 'g09']:
+            lines = lib_NICS.gaussian_bq_lines(points)
+            print("\nAppend these lines to the molecule specification of the Gaussian input.")
+        else:
+            raise error_handler.ElseError(qccode, 'qccode')
+
+        print("The NICS values are then obtained from the shielding tensors of the ghost atoms,")
+        print("e.g. with: theodore plot_vist -q %s -r '%s' <logfile>\n"%(qccode, ' '.join(str(iat) for iat in ring)))
+
         for line in lines:
             print(line)
 
         if ofile is not None:
             with open(ofile, 'w') as f:
                 f.write('\n'.join(lines) + '\n')
-            print("\nBq lines written to %s"%ofile)
+            print("\nGhost atom lines written to %s"%ofile)
 
 
 def read_xyz(xyzfile):

@@ -15,7 +15,8 @@ from theodore import units
 # numpy print options on import, which made the output order dependent.
 NICS_PRINTOPTIONS = {'precision': 8, 'suppress': False, 'linewidth': 75}
 
-# Geometry helpers
+# Ring geometry and ghost atom positions
+#   These helpers are general and do not depend on the quantum chemistry code.
 
 def ring_frame(ring_coords):
     """
@@ -67,9 +68,12 @@ def ring_scan_points(ring_coords, hmin=0., hmax=3., step=0.5):
     heights = [hmin + i * step for i in range(nstep + 1)]
     return ring_probe_points(ring_coords, heights)
 
+# Ghost atom input (specific to the quantum chemistry code)
+#   Only Gaussian is implemented so far.
+
 def gaussian_bq_lines(points, fmt='%12.6f'):
     """
-    Return the lines of a Gaussian molecule specification for ghost atoms.
+    Return the lines of a Gaussian molecule specification for ghost atoms (Bq).
     """
     # avoid printing -0.000000
     return ['Bq ' + ' '.join(fmt%(x if abs(x) >= 5.e-7 else 0.) for x in point) for point in points]
