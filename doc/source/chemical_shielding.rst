@@ -143,5 +143,10 @@ ring axis (within 0.05 A)::
 
 The table (also written to ``NICS_ring.txt``) lists the height above the ring centroid, the
 isotropic value ``NICS_iso`` and the out-of-plane component ``NICS_zz = -n.sigma.n`` with ``n``
-the ring normal, and labels the NICS(0) and NICS(+-1) points. NICS values follow the usual
-convention NICS = -sigma. The ring atom numbers refer to the order of the real atoms in the log file.
+the ring normal, and labels the NICS(0) and NICS(+-1) points.
+It also lists ``NICS_eig``, the eigenvalue of the NICS tensor whose eigenvector is closest to the
+ring normal, together with the angle between both. ``NICS_zz`` and ``NICS_eig`` coincide when the
+ring normal is an eigenvector of the tensor (e.g. at NICS(0) of a planar molecule); otherwise
+they differ, and the angle shows how far the tensor axes are tilted from the ring normal.
+NICS values follow the usual convention NICS = -sigma.
+The ring atom numbers refer to the order of the real atoms in the log file.

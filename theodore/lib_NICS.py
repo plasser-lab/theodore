@@ -107,6 +107,9 @@ class NICS_parser:
         """
         Evaluate NICS_iso and NICS_zz for all ghost atoms on the axis of a ring
         and label the NICS(0) and NICS(+-1) points.
+        NICS_zz is the component of the NICS tensor along the ring normal.
+        In addition, the eigenvalue whose eigenvector is closest to the ring
+        normal is reported (NICS_eig, with the angle between both vectors).
         ring    - ring atoms, either as a list of atom indices (starting at 1,
                   in the order of the real atoms in the log file) or as an
                   (n x 3) array of coordinates (Angstrom)
@@ -145,17 +148,19 @@ class NICS_parser:
             else:
                 label = 'NICS(%.2f)'%height
 
+            NICS_eig, eig_angle = point.ret_NICS_eig(normal)
             results.append({'point': ipoint, 'height': height, 'offset': offset,
                 'NICS_iso': point.ret_NICS_iso(), 'NICS_zz': point.ret_NICS_comp(normal),
-                'label': label})
+                'NICS_eig': NICS_eig, 'eig_angle': eig_angle, 'label': label})
 
         outstr  = "Ring centroid: (% .5f, % .5f, % .5f)\n"%tuple(centroid)
         outstr += "Ring normal:   (% .5f, % .5f, % .5f)\n"%tuple(normal)
-        outstr += "NICS = -sigma (ppm); NICS_zz along the ring normal\n"
-        outstr += "%6s %9s %9s %10s %10s  %s\n"%('Point', 'height', 'offset', 'NICS_iso', 'NICS_zz', 'label')
+        outstr += "NICS = -sigma (ppm); NICS_zz: component along the ring normal;\n"
+        outstr += "NICS_eig: eigenvalue whose eigenvector is closest to the ring normal (angle in deg)\n"
+        outstr += "%6s %9s %9s %10s %10s %10s %6s  %s\n"%('Point', 'height', 'offset', 'NICS_iso', 'NICS_zz', 'NICS_eig', 'angle', 'label')
         for res in results:
-            outstr += "%6s % 9.4f % 9.4f % 10.4f % 10.4f  %s\n"%('P%i'%res['point'],
-                res['height'], res['offset'], res['NICS_iso'], res['NICS_zz'], res['label'])
+            outstr += "%6s % 9.4f % 9.4f % 10.4f % 10.4f % 10.4f %6.2f  %s\n"%('P%i'%res['point'],
+                res['height'], res['offset'], res['NICS_iso'], res['NICS_zz'], res['NICS_eig'], res['eig_angle'], res['label'])
         if len(results) == 0:
             outstr += " *** No ghost atoms found within %.3f A of the ring axis\n"%tol
 
@@ -268,6 +273,21 @@ class NICS_point:
         n = numpy.array(direction, float)
         n /= numpy.linalg.norm(n)
         return -numpy.dot(n, numpy.dot(self.NICS_tensor, n))
+
+    def ret_NICS_eig(self, direction):
+        """
+        Return the eigenvalue of the NICS tensor (in ppm, i.e. -eigenvalue of
+        sigma) whose eigenvector is closest to the given direction, and the
+        angle (in degrees) between this eigenvector and the direction.
+        For the ring normal this is the out-of-plane eigenvalue.
+        diag() has to be called first.
+        """
+        n = numpy.array(direction, float)
+        n /= numpy.linalg.norm(n)
+        cosines = [abs(numpy.dot(n, self.coor[:, mu])) / numpy.linalg.norm(self.coor[:, mu]) for mu in range(3)]
+        mu = int(numpy.argmax(cosines))
+        angle = numpy.degrees(numpy.arccos(min(cosines[mu], 1.)))
+        return -self.evals[mu], angle
 
     def get_data(self):
         """
