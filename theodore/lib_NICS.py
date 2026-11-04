@@ -426,7 +426,7 @@ class NICS_point:
             self.af.write('draw color red\n')
             return True
 
-class NICS_parser_g09(NICS_parser):
+class NICS_parser_gaussian(NICS_parser):
     """
     Parse Gaussian (G09, G16) NICS calculations.
 
@@ -568,9 +568,6 @@ class NICS_parser_g09(NICS_parser):
             except ValueError:
                 bq.append(None)
         return bq
-
-# The same parser is used for all Gaussian versions
-NICS_parser_gaussian = NICS_parser_g09
 
 class NICS_parser_QC(NICS_parser):
     """

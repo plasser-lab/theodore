@@ -31,8 +31,8 @@ class PlotVist(Action):
     lab_min = 1000. :: float, alias=l
     # Log files to be parsed
     logfiles = :: list(str)
-    # Quantum chemistry code (g09, g16 or gaussian, qchem, turbomole, dalton)
-    qccode = g09 :: str, alias=q
+    # Quantum chemistry code (gaussian, qchem, turbomole, dalton)
+    qccode = gaussian :: str, alias=q
     # Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis, e.g. -r '4 5 7 9 8 6' (Gaussian only)
     ring = :: ilist, optional, alias=r
     """
@@ -59,8 +59,8 @@ class PlotVist(Action):
         ioptions = input_options.dens_ana_options(ifile=None, check_init=False)
         ioptions['rtype'] = 'cclib'
 
-        if qccode in ['g09', 'g16', 'gaussian']:
-            nv = lib_NICS.NICS_parser_g09()
+        if qccode in ['gaussian', 'g09']: # g09: previous name, still accepted
+            nv = lib_NICS.NICS_parser_gaussian()
         elif qccode == 'qchem':
             nv = lib_NICS.NICS_parser_QC()
         elif qccode == 'turbomole':

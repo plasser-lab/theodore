@@ -32,7 +32,7 @@ Run ``theodore plot_vist -h`` to see all command line options
     -c/--coor            | Create coordinate files (using cclib)
     -p/--plot_all        | Render and plot all tensors separately
     -l/--lab_min         | Add labels for eigenvalues above this value (in ppm), e.g. -l 10                                    
-    -q/--qccode          | Quantum chemistry code (g09, g16 or gaussian, qchem, turbomole, dalton)
+    -q/--qccode          | Quantum chemistry code (gaussian, qchem, turbomole, dalton)
     -r/--ring            | Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis, e.g. -r '4 5 7 9 8 6' (Gaussian only)
 
 Simple example
@@ -118,7 +118,8 @@ In practice Gaussian usually turns symmetry off when ghost atoms are present
 The Bq atoms are matched to their tensors through the centre number. This also covers Bq atoms
 given as Z-matrix lines or with freeze codes (``Bq 0 x y z``).
 If a log file contains several shielding sections (e.g. ``Opt NMR`` or ``--Link1--`` jobs),
-only the last one is used. The same parser is used for Gaussian 09 and Gaussian 16.
+only the last one is used. The same parser is used for all Gaussian versions (option ``-q gaussian``,
+the default; the previous name ``g09`` is still accepted).
 
 NICS(0), NICS(1) and NICS_zz
 ____________________________
