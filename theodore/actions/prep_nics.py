@@ -10,22 +10,22 @@ with LazyImportCreator() as importer:
 
 class NICSPrep(Action):
 
-    name = 'nics_prep'
+    name = 'prep_nics'
 
-    _colt_description = 'Ghost atoms on a ring axis for NICS calculations'
+    _colt_description = 'Place ghost atoms on a ring for NICS/VIST calculations'
 
     _user_input = """
     # Molecular structure in xyz format (Angstrom)
     xyzfile = :: existing_file
-    # Ring atoms (starting at 1), in the order they appear around the ring
+    # Ring atoms (starting at 1), in the order they     appear around the ring, e.g. '1 4 5 6'
     ring = :: ilist
-    # Heights above the ring centroid (Angstrom), e.g. -H '0 1' for NICS(0) and NICS(1)
+    # Heights above the ring centroid (Angstrom), e.g.  -H '0 1' for NICS(0) and NICS(1)
     heights = 0 1 :: flist, alias=H
     # Also place points below the ring (negative heights)
     both_sides = false :: bool, alias=b
-    # Scan along the ring axis instead: 'hmin hmax step', e.g. -s '0 3 0.5'
+    # Scan along an axis perpendicular to the ring:     'hmin hmax step', e.g. -s '0 3 0.5'
     scan = :: flist, optional, alias=s
-    # Write the ghost atom lines to this file (in addition to the screen)
+    # Write ghost atom lines to this file (in addition  to the screen)
     ofile = :: str, optional, alias=o
     # Quantum chemistry code (currently only gaussian)
     qccode = gaussian :: str, alias=q
