@@ -109,7 +109,7 @@ class NICS_parser:
         and label the NICS(0) and NICS(+-1) points.
         NICS_zz is the component of the NICS tensor along the ring normal.
         In addition, the eigenvalue whose eigenvector is closest to the ring
-        normal is reported (NICS_eig, with the angle between both vectors).
+        normal is reported (NICS_ev, with the angle between both vectors).
         ring    - ring atoms, either as a list of atom indices (starting at 1,
                   in the order of the real atoms in the log file) or as an
                   (n x 3) array of coordinates (Angstrom)
@@ -156,8 +156,8 @@ class NICS_parser:
         outstr  = "Ring centroid: (% .5f, % .5f, % .5f)\n"%tuple(centroid)
         outstr += "Ring normal:   (% .5f, % .5f, % .5f)\n"%tuple(normal)
         outstr += "NICS = -sigma (ppm); NICS_zz: component along the ring normal;\n"
-        outstr += "NICS_eig: eigenvalue whose eigenvector is closest to the ring normal (angle in deg)\n"
-        outstr += "%6s %9s %9s %10s %10s %10s %6s  %s\n"%('Point', 'height', 'offset', 'NICS_iso', 'NICS_zz', 'NICS_eig', 'angle', 'label')
+        outstr += "NICS_ev: eigenvalue whose eigenvector is closest to the ring normal (angle in deg)\n\n"
+        outstr += "%6s %9s %9s %10s %10s %10s %6s  %s\n"%('Point', 'height', 'offset', 'NICS_iso', 'NICS_zz', 'NICS_ev', 'angle', 'label')
         for res in results:
             outstr += "%6s % 9.4f % 9.4f % 10.4f % 10.4f % 10.4f %6.2f  %s\n"%('P%i'%res['point'],
                 res['height'], res['offset'], res['NICS_iso'], res['NICS_zz'], res['NICS_eig'], res['eig_angle'], res['label'])
