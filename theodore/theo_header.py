@@ -160,6 +160,6 @@ def add_VIST(cfile):
         rstr += addlinec()
         rstr += addlinel("Visualization of chemical shielding tensors (VIST):", 3)
         rstr += addlinel("F. Plasser, F. Gloecklhofer")
-        rstr += addlinel("Eur. J. Org. Chem. (2021), 2021, 2529.")
+        rstr += addlinel("Eur. J. Org. Chem. (2021), DOI: 10.1002/ejoc.202100352.")
 
     return rstr
