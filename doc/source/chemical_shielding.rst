@@ -7,7 +7,7 @@ TheoDORE provides functionalities to analyse chemical shielding tensors and, in 
 Visualisation of chemical shielding tensors (VIST)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The VIST method [`Eur. J. Org. Chem., (2021) <https://doi.org/10.1002/ejoc.202100352>`_] allows to visualise chemical shielding tensors in the context of the molecular structure showing local variations of the shielding along with its anisotropy. The method proceeds in the following order
+The VIST method [`Eur. J. Org. Chem., (2021) 17, 2529 <https://doi.org/10.1002/ejoc.202100352>`_] allows to visualise chemical shielding tensors in the context of the molecular structure showing local variations of the shielding along with its anisotropy. The method proceeds in the following order
 
 * Computation of shielding tensors
 * Interfaces exists for Gaussian, Q-Chem,  Turbomole, and Dalton.
@@ -121,32 +121,33 @@ If a log file contains several shielding sections (e.g. ``Opt NMR`` or ``--Link1
 only the last one is used. The same parser is used for all Gaussian versions (option ``-q gaussian``,
 the default; the previous name ``g09`` is still accepted).
 
-NICS(0), NICS(1) and NICS_zz
-____________________________
+Placing of NICS probes
+______________________
 
-Placing the ghost atoms on the ring axis is done with ``theodore nics_prep``.
+TheoDORE features a tool for placing the ghost atoms on/near a ring as NICS(0), NICS(1), etc.
+This is done with ``theodore prep_nics``.
 It reads an xyz file and the ring atoms (in their order around the ring) and prints the ghost atom
 lines to be added to the input of the quantum chemistry code (option ``-q/--qccode``).
 Currently only Gaussian is implemented (``-q gaussian``, the default), where the Bq lines are appended
 to the molecule specification::
 
-    theodore nics_prep molecule.xyz '1 2 3 4 5 6' -H '0 1' -b
-    theodore nics_prep molecule.xyz '1 2 3 4 5 6' -s '0 3 0.5'    # scan along the ring axis
+    theodore prep_nics molecule.xyz '1 2 3 4 5 6' -H '0 1' -b
+    theodore prep_nics molecule.xyz '1 2 3 4 5 6' -s '0 3 0.5'    # scan along the ring axis
 
 The ring centroid is the mean of the ring atom positions and the ring normal is the normal of the
 least-squares plane through them, oriented by the right-hand rule with respect to the atom order.
 
-After the NMR job, the ``-r`` option of ``plot_vist`` evaluates all ghost atoms that lie on the
-ring axis (within 0.05 A)::
+After the NMR job, the ``-r`` option of ``plot_vist`` can be used to print a summary
+for all ghost atoms that lie along the ring axis of a given ring (within 0.05 A)::
 
     theodore plot_vist -r '1 2 3 4 5 6' gaussian.log
 
 The table (also written to ``NICS_ring.txt``) lists the height above the ring centroid, the
 isotropic value ``NICS_iso`` and the out-of-plane component ``NICS_zz = -n.sigma.n`` with ``n``
 the ring normal, and labels the NICS(0) and NICS(+-1) points.
-It also lists ``NICS_eig``, the eigenvalue of the NICS tensor whose eigenvector is closest to the
-ring normal, together with the angle between both. ``NICS_zz`` and ``NICS_eig`` coincide when the
+It also lists ``NICS_ev``, the eigenvalue of the NICS tensor whose eigenvector is closest to the
+ring normal, together with the angle between both. ``NICS_zz`` and ``NICS_ev`` coincide when the
 ring normal is an eigenvector of the tensor (e.g. at NICS(0) of a planar molecule); otherwise
 they differ, and the angle shows how far the tensor axes are tilted from the ring normal.
-NICS values follow the usual convention NICS = -sigma.
+NICS values follow the usual convention, i.e., NICS is the negative of the chemical shielding.
 The ring atom numbers refer to the order of the real atoms in the log file.
