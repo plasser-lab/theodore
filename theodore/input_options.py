@@ -408,6 +408,7 @@ class dens_ana_options(read_options):
 
         # Read options
         self.set_kd('mo_file', None, 'MO-coefficient file (Molden format)')
+        self.set_kd('cclib_mo_file', None, 'rtype=cclib: separate log file with the MOs (e.g. Gaussian pop=full single point)')
         self.set_kd('rtype', None, 'Third party program and calculation type')
         self.set_kd('rfile', None, 'Main output file of the third party program')
         self.set_kd('rfile2', None, 'Second output file (if applicable)')

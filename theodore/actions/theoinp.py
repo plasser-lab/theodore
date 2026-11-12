@@ -64,7 +64,8 @@ class write_options_theo(input_options.write_options):
             ('adf', 'ADF (TDDFT)'),
             ('tddftb', 'DFTB+ - TDDFTB'),
             ('dftmrci', 'DFT/MRCI'),
-            ('onetep', 'ONETEP')
+            ('onetep', 'ONETEP'),
+            ('orca_json', 'ORCA 6 TDDFT (JSON file from orca_2json)')
         ], rdef)
 
         # set defaults
@@ -135,6 +136,9 @@ class write_options_theo(input_options.write_options):
             self['mo_file'] = 'orca.molden.input'
             self['coor_file'] = ''
             self['coor_format'] = ''
+        elif self['rtype'] == 'orca_json':
+            self['rfile'] = 'job.json'
+            self['mo_file'] = None
         elif self['rtype'] == 'adf':
             self['rfile'] = 'ams.results/adf.rkf'
             self['mo_file'] = None

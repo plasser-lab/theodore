@@ -92,11 +92,27 @@ class dens_ana_base:
             self.state_list = file_parser.file_parser_orca(self.ioptions).read(self.mos)
         elif rtype == 'orcacas':
             self.state_list = file_parser.file_parser_orca_CAS(self.ioptions).read(self.mos)
+        elif rtype in ['orca_json', 'orcajson']:
+            # ORCA 6: everything is read from the file written by orca_2json
+            from . import orca_json_interface
+            data = orca_json_interface.load_orca_json(self.ioptions.get('rfile'))
+            if not hasattr(self, 'mos'):
+                self.mos = orca_json_interface.MO_set_orca_json(file=self.ioptions.get('rfile'))
+                self.mos.read(data, spin=self.ioptions['spin'])
+                self.read2_mos()
+                # orbitals can only be exported with a Molden file (mo_file)
+                self.ioptions['jmol_orbitals'] = False
+                self.ioptions['molden_orbitals'] = False
+            self.state_list = orca_json_interface.file_parser_orca_json(self.ioptions).read(self.mos, data=data)
         elif rtype in ['cclib', 'gamess']:
             # these are parsed with the external cclib library
             ccli = cclib_interface.file_parser_cclib(self.ioptions)
 
-            if not hasattr(self, 'mos'):
+            if not hasattr(self, 'mos') and self.ioptions.get('cclib_mo_file', strict=False):
+                # MOs from a separate log file, e.g. a Gaussian pop=full single point
+                #   that was used as guess=read for the TDDFT job
+                self.mos = ccli.read_mos_from(self.ioptions['cclib_mo_file'])
+            elif not hasattr(self, 'mos'):
                 errcode = ccli.check(maxerr=1)
                 print()
                 self.mos = ccli.read_mos()
@@ -127,6 +143,11 @@ class dens_ana_base:
         elif self.ioptions['rtype'].lower() in ['cclib', 'gamess']:
             if lvprt >= 1:
                 print("\nUsing cclib structure")
+        elif self.ioptions['rtype'].lower() in ['orca_json', 'orcajson'] and not 'mo_file' in self.ioptions:
+            if lvprt >= 1:
+                print("\nUsing structure from the ORCA JSON file")
+            self.struc = lib_struc.structure()
+            self.struc.read_at_dicts(self.mos.at_dicts)
         elif self.ioptions['rtype'].lower() in ['adf']:
             if lvprt >= 1:
                 print("\nUsing ADF structure")

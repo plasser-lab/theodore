@@ -306,6 +306,28 @@ This produces the following options in the input file ``dens_ana.in``
   mo_file='orca.molden.input'
 
 
+ORCA 6 - JSON interface
+_______________________
+For ORCA 6, all information can be read from the JSON file written by ``orca_2json``.
+No Molden file, no ``orca.cis`` file and no cclib are needed, so the interface does not depend on the layout of the binary files.
+
+1. Run the CIS/TDA/TDDFT job and convert the gbw file: ``orca_2json job`` (the default configuration contains the MO coefficients, the basis function labels and the excitation amplitudes).
+   If the file ``job.property.json`` is present next to ``job.json``, the oscillator strengths are read from it as well.
+
+2. Use the following options in ``dens_ana.in``
+
+.. code-block:: text
+
+  rtype='orca_json'
+  rfile='job.json'
+
+Singlet and triplet roots are read in the order in which they are stored in the file.
+For RPA, the X amplitudes are used (as for ``orca.cis``).
+Orbitals (NTOs) can only be exported if a Molden file is also given via ``mo_file`` (``orca_2mkl job -molden``); otherwise ``jmol_orbitals`` and ``molden_orbitals`` are switched off.
+The interface was checked with an ORCA 6.1.1 TDA job (restricted singlets). RPA, triplet and unrestricted jobs follow the same file layout but have not been tested yet.
+
+*Note*: the cclib version distributed with TheoDORE cannot parse ORCA 6 output files, so ``rtype='cclib'`` does not work for ORCA 6; use the Molden/``orca.cis`` route above or the JSON interface.
+
 ORCA using cclib
 ________________
 Alternatively, ORCA can be parsed entirely with the `cclib library <http://cclib.github.io/>`_.
@@ -366,6 +388,16 @@ Example input:
 .. code-block:: text
 
     #p PBEPBE/6-31G* td=(singlets, nstates=10) pop=full iop(9/40=3) GFINPUT
+
+If the TDDFT job does not print the MOs (no ``pop=full``), they can be read from a separate log file
+of a single point with ``pop=full`` whose orbitals were used in the TDDFT job (``guess=read geom=allcheck``)::
+
+    cclib_mo_file='sp.log'
+
+TheoDORE checks that both files have the same atoms and geometry, SCF energy and occupied orbital energies.
+The phases of the orbitals cannot be checked this way: they are identical when the TDDFT job reads the
+converged orbitals of the single point from its checkpoint file.
+Printing the MOs in the TDDFT job itself (``pop=full``) remains the safest option.
 
 For some applications, in particular in connection with ORBKIT, it is advisable to supply an externally generated molden file with orbital information.
 For this purpose, open the Gaussian-log file in Molden. Choose "Write - Molden Format" and save as ``orbs.mld``. Then specify this file in ``dens_ana.in``:
