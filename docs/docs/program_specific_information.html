@@ -74,6 +74,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#orca">ORCA</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#orca-tddft">ORCA - TDDFT</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#orca-using-cclib">ORCA using cclib</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#orca-cas">ORCA - CAS</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#gaussian-tddft">Gaussian - TDDFT</a></li>
@@ -212,7 +213,7 @@ To specify, for example, four frozen orbitals of <em>a</em> symmetry and three o
 </div>
 <p>In addition, the MO-coefficients of the preceeding MCSCF calculation have to be made available, typically in <code class="docutils literal notranslate"><span class="pre">MOLDEN/molden_mo_mc.sp</span></code>.</p>
 <p>For a state density analysis at the MR-CI level, the NO files should be read in rather than using the <code class="docutils literal notranslate"><span class="pre">colmrci</span></code> functionality.
-Alternatively, an attachment/detachment analysis can be done with the <a class="reference external" href="https://www.univie.ac.at/columbus/docs_COL70/utilities.html#densav">densav.x</a> functionality of COLUMBUS.</p>
+Alternatively, an attachment/detachment analysis can be done with the <a class="reference external" href="https://columbus-program-system.gitlab.io/columbus/utilities.html#densav">densav.x</a> functionality of COLUMBUS.</p>
 </section>
 </section>
 <section id="molcas">
@@ -361,6 +362,30 @@ If you want to do that, set the following output options:</p>
 </pre></div>
 </div>
 <p>In the case of TDA both options work, for RPA <code class="docutils literal notranslate"><span class="pre">read_binary=True</span></code> has to be used.</p>
+</section>
+<section id="orca-cas">
+<h3>ORCA - CAS<a class="headerlink" href="#orca-cas" title="Permalink to this headline"></a></h3>
+<p>TheoDORE is now also able to parse the Tdens-CAS density matrixes from the combination of the <code class="docutils literal notranslate"><span class="pre">orca.densities</span></code> and <code class="docutils literal notranslate"><span class="pre">orca.densitiesinfo</span></code> files.</p>
+<ol class="arabic simple">
+<li><p>Run an ORCA job with “!KeepTransDensity” in the simple input line and copy the <code class="docutils literal notranslate"><span class="pre">orca.out</span></code>, <code class="docutils literal notranslate"><span class="pre">orca.gbw</span></code>, <code class="docutils literal notranslate"><span class="pre">orca.densities</span></code> and <code class="docutils literal notranslate"><span class="pre">orca.densitiesinfo</span></code> files. <em>Note</em>: the filenames <code class="docutils literal notranslate"><span class="pre">orca.densities</span></code> and <code class="docutils literal notranslate"><span class="pre">orca.densitiesinfo</span></code> are hardcoded in TheoDORE.</p></li>
+<li><p>Create a molden file using <code class="docutils literal notranslate"><span class="pre">orca_2mkl</span> <span class="pre">orca</span> <span class="pre">-molden</span></code></p></li>
+<li><p>Run Run <code class="docutils literal notranslate"><span class="pre">theodore</span> <span class="pre">theoinp</span></code> and select <code class="docutils literal notranslate"><span class="pre">14</span></code> at</p></li>
+</ol>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Type of job (rtype):
+...
+  [13]       orca - ORCA TDDFT (using a Molden file and cclib)
+  [14]    orcaCAS - ORCA CAS (using .molden, .densities and .densitiesinfo)
+...
+Choice: 14
+</pre></div>
+</div>
+<p>This produces the following options in the input file <code class="docutils literal notranslate"><span class="pre">dens_ana.in</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>rtype=&#39;orcaCAS&#39;
+rfile=&#39;orca.out&#39;
+read_binary=True
+mo_file=&#39;orca.molden.input&#39;
+</pre></div>
+</div>
 </section>
 </section>
 <section id="gaussian-tddft">

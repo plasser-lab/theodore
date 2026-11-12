@@ -47,6 +47,8 @@
 <li class="toctree-l3"><a class="reference internal" href="#command-line-options">Command line options</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#simple-example">Simple example</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#processing-several-output-files">Processing several output files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gaussian-orientation-of-the-ghost-atoms">Gaussian: orientation of the ghost atoms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#placing-of-nics-probes">Placing of NICS probes</a></li>
 </ul>
 </li>
 </ul>
@@ -86,10 +88,10 @@
 <p>TheoDORE provides functionalities to analyse chemical shielding tensors and, in particular their use to analyze aromaticity.</p>
 <section id="visualisation-of-chemical-shielding-tensors-vist">
 <h2>Visualisation of chemical shielding tensors (VIST)<a class="headerlink" href="#visualisation-of-chemical-shielding-tensors-vist" title="Permalink to this headline"></a></h2>
-<p>The VIST method [<a class="reference external" href="https://doi.org/10.1002/ejoc.202100352">Eur. J. Org. Chem., (2021)</a>] allows to visualise chemical shielding tensors in the context of the molecular structure showing local variations of the shielding along with its anisotropy. The method proceeds in the following order</p>
+<p>The VIST method [<a class="reference external" href="https://doi.org/10.1002/ejoc.202100352">Eur. J. Org. Chem., (2021) 17, 2529</a>] allows to visualise chemical shielding tensors in the context of the molecular structure showing local variations of the shielding along with its anisotropy. The method proceeds in the following order</p>
 <ul class="simple">
 <li><p>Computation of shielding tensors</p></li>
-<li><p>Interfaces exists for Gaussian, Q-Chem and Turbomole.</p></li>
+<li><p>Interfaces exists for Gaussian, Q-Chem,  Turbomole, and Dalton.</p></li>
 <li><p>Creation of VIST input via <code class="docutils literal notranslate"><span class="pre">theodore</span> <span class="pre">plot_vist</span></code></p></li>
 <li><p>Rendering of VIST plot in <a class="reference external" href="https://www.ks.uiuc.edu/Research/vmd/">VMD</a></p></li>
 </ul>
@@ -99,14 +101,15 @@
 <p>Run <code class="docutils literal notranslate"><span class="pre">theodore</span> <span class="pre">plot_vist</span> <span class="pre">-h</span></code> to see all command line options</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>plot_VIST.py [options] &lt;logfile1&gt; &lt;logfile2&gt;
 Command line options:
- -h, -H, --help: print this help
- -v, --vist    : VIST for only these dummy atoms, e.g. -v &#39;0 3 5&#39;
- -o            : Name of output file (for VMD)
- -s, --scale   : Scale factor VIST dumb-bells
- -c, --coor    : Create coordinate files (using cclib)
- -p            : Render and plot all tensors separately
- -l/--lab_min  : Add labels for eigenvalues above this value (in ppm), e.g. -l 10
- -q/--qccode   : Quantum chemistry code (g09, qchem, turbomole)
+-h/--help            | show this help message and exit
+-v/--vist            | VIST for only these dummy atoms, e.g. -v &#39;0 3 5&#39;
+-o/--ofile           | Name of output file (for VMD)
+-s/--scale           | Scale factor for VIST dumb-bells
+-c/--coor            | Create coordinate files (using cclib)
+-p/--plot_all        | Render and plot all tensors separately
+-l/--lab_min         | Add labels for eigenvalues above this value (in ppm), e.g. -l 10
+-q/--qccode          | Quantum chemistry code (gaussian, qchem, turbomole, dalton)
+-r/--ring            | Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis, e.g. -r &#39;4 5 7 9 8 6&#39; (Gaussian only)
 </pre></div>
 </div>
 </section>
@@ -162,6 +165,49 @@ Command line options:
 </pre></div>
 </div>
 <p>Initially all geometries are superposed on top of each other. To hide some of the molecules use the <code class="docutils literal notranslate"><span class="pre">D</span></code> option (part of <code class="docutils literal notranslate"><span class="pre">T</span> <span class="pre">A</span> <span class="pre">D</span> <span class="pre">F</span> <span class="pre">Molecule</span></code>) in the VMD Main menu.</p>
+</section>
+<section id="gaussian-orientation-of-the-ghost-atoms">
+<h3>Gaussian: orientation of the ghost atoms<a class="headerlink" href="#gaussian-orientation-of-the-ghost-atoms" title="Permalink to this headline"></a></h3>
+<p>Gaussian reports the shielding tensors in the <em>standard orientation</em> unless <code class="docutils literal notranslate"><span class="pre">NoSymm</span></code> is given.
+<code class="docutils literal notranslate"><span class="pre">plot_vist</span></code> therefore takes the Bq positions from the last orientation table printed before the
+shielding tensors (the standard orientation if present, otherwise the input orientation), so that
+coordinates and tensors are always in the same frame.
+In practice Gaussian usually turns symmetry off when ghost atoms are present
+(“Cannot cope with ghost atoms”) and prints only the input orientation; both frames then coincide.
+The Bq atoms are matched to their tensors through the centre number. This also covers Bq atoms
+given as Z-matrix lines or with freeze codes (<code class="docutils literal notranslate"><span class="pre">Bq</span> <span class="pre">0</span> <span class="pre">x</span> <span class="pre">y</span> <span class="pre">z</span></code>).
+If a log file contains several shielding sections (e.g. <code class="docutils literal notranslate"><span class="pre">Opt</span> <span class="pre">NMR</span></code> or <code class="docutils literal notranslate"><span class="pre">--Link1--</span></code> jobs),
+only the last one is used. The same parser is used for all Gaussian versions (option <code class="docutils literal notranslate"><span class="pre">-q</span> <span class="pre">gaussian</span></code>,
+the default; the previous name <code class="docutils literal notranslate"><span class="pre">g09</span></code> is still accepted).</p>
+</section>
+<section id="placing-of-nics-probes">
+<h3>Placing of NICS probes<a class="headerlink" href="#placing-of-nics-probes" title="Permalink to this headline"></a></h3>
+<p>TheoDORE features a tool for placing the ghost atoms on/near a ring as NICS(0), NICS(1), etc.
+This is done with <code class="docutils literal notranslate"><span class="pre">theodore</span> <span class="pre">prep_nics</span></code>.
+It reads an xyz file and the ring atoms (in their order around the ring) and prints the ghost atom
+lines to be added to the input of the quantum chemistry code (option <code class="docutils literal notranslate"><span class="pre">-q/--qccode</span></code>).
+Currently only Gaussian is implemented (<code class="docutils literal notranslate"><span class="pre">-q</span> <span class="pre">gaussian</span></code>, the default), where the Bq lines are appended
+to the molecule specification:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">theodore</span> <span class="n">prep_nics</span> <span class="n">molecule</span><span class="o">.</span><span class="n">xyz</span> <span class="s1">&#39;1 2 3 4 5 6&#39;</span> <span class="o">-</span><span class="n">H</span> <span class="s1">&#39;0 1&#39;</span> <span class="o">-</span><span class="n">b</span>
+<span class="n">theodore</span> <span class="n">prep_nics</span> <span class="n">molecule</span><span class="o">.</span><span class="n">xyz</span> <span class="s1">&#39;1 2 3 4 5 6&#39;</span> <span class="o">-</span><span class="n">s</span> <span class="s1">&#39;0 3 0.5&#39;</span>    <span class="c1"># scan along the ring axis</span>
+</pre></div>
+</div>
+<p>The ring centroid is the mean of the ring atom positions and the ring normal is the normal of the
+least-squares plane through them, oriented by the right-hand rule with respect to the atom order.</p>
+<p>After the NMR job, the <code class="docutils literal notranslate"><span class="pre">-r</span></code> option of <code class="docutils literal notranslate"><span class="pre">plot_vist</span></code> can be used to print a summary
+for all ghost atoms that lie along the ring axis of a given ring (within 0.05 A):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">theodore</span> <span class="n">plot_vist</span> <span class="o">-</span><span class="n">r</span> <span class="s1">&#39;1 2 3 4 5 6&#39;</span> <span class="n">gaussian</span><span class="o">.</span><span class="n">log</span>
+</pre></div>
+</div>
+<p>The table (also written to <code class="docutils literal notranslate"><span class="pre">NICS_ring.txt</span></code>) lists the height above the ring centroid, the
+isotropic value <code class="docutils literal notranslate"><span class="pre">NICS_iso</span></code> and the out-of-plane component <code class="docutils literal notranslate"><span class="pre">NICS_zz</span> <span class="pre">=</span> <span class="pre">-n.sigma.n</span></code> with <code class="docutils literal notranslate"><span class="pre">n</span></code>
+the ring normal, and labels the NICS(0) and NICS(+-1) points.
+It also lists <code class="docutils literal notranslate"><span class="pre">NICS_ev</span></code>, the eigenvalue of the NICS tensor whose eigenvector is closest to the
+ring normal, together with the angle between both. <code class="docutils literal notranslate"><span class="pre">NICS_zz</span></code> and <code class="docutils literal notranslate"><span class="pre">NICS_ev</span></code> coincide when the
+ring normal is an eigenvector of the tensor (e.g. at NICS(0) of a planar molecule); otherwise
+they differ, and the angle shows how far the tensor axes are tilted from the ring normal.
+NICS values follow the usual convention, i.e., NICS is the negative of the chemical shielding.
+The ring atom numbers refer to the order of the real atoms in the log file.</p>
 </section>
 </section>
 </section>

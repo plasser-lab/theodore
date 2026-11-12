@@ -98,6 +98,7 @@
     analyze_nos               Analysis of natural orbital (NO) files                      
     parse_libwfa              Parse libwfa output from Q-Chem or OpenMolcas               
     plot_vist                 Read NICS values and prepare VIST plot                      
+    prep_nics                 Place ghost atoms on a ring for NICS/VIST calculations      
     plot_omfrag               Plot Omega matrices as pseudocolor matrix plot              
     plot_om_bars              Plot Omega matrices as bar graphs                           
     plot_frag_decomp          Plot fragment decomposition of Omega matrix                 
@@ -261,7 +262,7 @@ usage: theodore ... parse_libwfa [-h] [-f ifile] logfile typ
 
 
 
-usage: theodore ... plot_vist [-h] [-v vist] [-o ofile] [-s scale] [-c] [-p] [-l lab_min] [-q qccode] logfiles [logfiles ...] 
+usage: theodore ... plot_vist [-h] [-v vist] [-o ofile] [-s scale] [-c] [-p] [-l lab_min] [-q qccode] [-r ring] logfiles [logfiles ...] 
 
 
 
@@ -281,9 +282,41 @@ usage: theodore ... plot_vist [-h] [-v vist] [-o ofile] [-s scale] [-c] [-p] [-l
                           value=True                                                 
     -p/--plot_all        Render and plot all tensors separately; Default=False, if se
                          t value=True                                                
-    -l/--lab_min         Add labels for eigenvalues above this value (in ppm), e.g. -
-                         l 10                                                        
-    -q/--qccode          Quantum chemistry code (g09, qchem, turbomole)              
+    -l/--lab_min         Add labels for eigenvalues above this value (in   ppm), e.g.
+                          -l 10                                                      
+    -q/--qccode          Quantum chemistry code (gaussian, qchem, turbomole, dalton) 
+    -r/--ring            Ring atoms for NICS(0)/NICS(1)/NICS_zz analysis,  e.g. -r '4
+                          5 7 9 8 6' (Gaussian only)                                 
+ </pre>
+<div class="line"><strong>prep_nics</strong></div>
+<pre class="literal-block">Place ghost atoms on a ring for NICS/VIST calculations
+
+
+
+usage: theodore ... prep_nics [-h] [-H heights] [-b] [-s scan] [-o ofile] [-q qccode] xyzfile ring 
+
+
+
+  positional arguments:
+  ---------------------------------------------------
+    xyzfile              Molecular structure in xyz format (Angstrom)                
+    ring                 Ring atoms (starting at 1), in the order they     appear aro
+                         und the ring, e.g. '1 4 5 6'                                
+
+
+
+  optional arguments:
+  ---------------------------------------------------
+    -h/--help            show this help message and exit                             
+    -H/--heights         Heights above the ring centroid (Angstrom), e.g.  -H '0 1' f
+                         or NICS(0) and NICS(1)                                      
+    -b/--both_sides      Also place points below the ring (negative heights); Default
+                         =False, if set value=True                                   
+    -s/--scan            Scan along an axis perpendicular to the ring:     'hmin hmax
+                          step', e.g. -s '0 3 0.5'                                   
+    -o/--ofile           Write ghost atom lines to this file (in addition  to the scr
+                         een)                                                        
+    -q/--qccode          Quantum chemistry code (currently only gaussian)            
  </pre>
 <div class="line"><strong>plot_omfrag</strong></div>
 <pre class="literal-block">Plot Omega matrices as pseudocolor matrix plot
