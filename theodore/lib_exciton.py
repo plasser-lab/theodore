@@ -18,12 +18,14 @@ class exciton_analysis:
     def get_distance_matrix(self, struc, U = 8.0, eps = 2):
         """
         Get distance matrix and compute ERIs according to Ohno formula.
+        U ... Hubbard parameter (eV)
+        eps ... screening
         """
         self.distmat = struc.ret_distance_matrix()
 
         # Ohno formula from W. Barford, PRB, 106, 035201 (2022)
-        self.Ohnomat = U / (1 + (U * eps * self.distmat)**2)**.5
-        # TODO: use for K2 and J2
+        red_distmat = self.distmat / units.energy['eV'] / units.length['A']
+        self.Ohnomat = U / (1 + (U * eps * red_distmat)**2)**.5
 
     def ret_RMSeh(self, Om, OmAt):
         """
@@ -56,35 +58,69 @@ class exciton_analysis:
         
         return MA_dist
 
-    def ret_Eb(self, Om, OmAt, Eb_diag=1.0):
+    def ret_K2(self, OmAt):
         """
-        Return an approximate exciton binding energy (eV).
-        TODO: One could use the Ohno formula here.
+        Return an approximate K2 exciton binding energy (eV) using the Ohno matrix.
         """
-        if not type(self.distmat) is numpy.ndarray:
-            raise error_handler.MsgError("Compute the distance matrix first!")
-        
-        Eb_dist = self.distmat.flatten() / units.length['A']
-        
-        for i in range(len(self.distmat)):
-            Eb_dist[i + i*len(self.distmat)] = Eb_diag
-            
-        Eb_au = numpy.dot(OmAt.flatten(), Eb_dist**-1.) / Om
-        
-        return Eb_au * units.energy['eV']
+        if not type(self.Ohnomat) is numpy.ndarray:
+            raise error_handler.MsgError("Compute the Ohno matrix first!")
+
+        return -numpy.sum(OmAt * self.Ohnomat)
 
     def ret_rTD(self, QT2, tpop):
         """
         Compute effective transition density size.
         """
-        if QT2 < 0.01:
+        if QT2 < 0.001:
             return None
         pot = 0
         for A, popA in enumerate(tpop):
             for B, popB in enumerate(tpop):
                 if A != B:
                     pot += popA * popB / self.distmat[A, B]
-                    #if abs(popA * popB / self.distmat[A, B]) > 0.01:
-                    #    print('%3i %3i % .5f % .5f % .5f % .5f'%(A, B, popA, popB, popA*popB / self.distmat[A, B], pot))
 
         return -QT2 / pot
+
+    def ret_Vinter(self, QT2, tpop):
+        """
+        Compute interaction term V_inter using Ohno matrix elements.
+        """
+        if QT2 < 0.001:
+            return None
+        pot = 0
+        for A, popA in enumerate(tpop):
+            for B, popB in enumerate(tpop):
+                if A != B:
+                    pot += popA * popB * self.Ohnomat[A, B]
+
+        return pot
+
+    def ret_Vdiag(self, QT2, tpop):
+        """
+        Compute diagonal contribution using Ohno matrix.
+        """
+        if QT2 < 0.001:
+            return None
+        pot = 0
+        for A, popA in enumerate(tpop):
+            pot += (popA**2) * self.Ohnomat[A, A]
+
+        return pot
+
+    def ret_J2(self, QT2, tpop):
+        """
+        Compute self-repulsion of the transition density J2 = V_diag + V_inter.
+        - For singlets: real Coulomb self-repulsion.
+        - For triplets: formal J2 only (not physically entitled).
+        """
+        Vdiag = self.ret_Vdiag(QT2, tpop)
+        Vinter = self.ret_Vinter(QT2, tpop)
+
+        if Vdiag is None or Vinter is None:
+            return None
+
+        J2 = Vdiag + Vinter
+
+        return J2
+
+

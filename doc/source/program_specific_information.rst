@@ -140,7 +140,7 @@ To specify, for example, four frozen orbitals of *a* symmetry and three of *b* u
 In addition, the MO-coefficients of the preceeding MCSCF calculation have to be made available, typically in ``MOLDEN/molden_mo_mc.sp``.
 
 For a state density analysis at the MR-CI level, the NO files should be read in rather than using the ``colmrci`` functionality.
-Alternatively, an attachment/detachment analysis can be done with the `densav.x <https://www.univie.ac.at/columbus/docs_COL70/utilities.html#densav>`_ functionality of COLUMBUS.
+Alternatively, an attachment/detachment analysis can be done with the `densav.x <https://columbus-program-system.gitlab.io/columbus/utilities.html#densav>`_ functionality of COLUMBUS.
 
 Molcas
 ~~~~~~
@@ -326,6 +326,35 @@ It is recommended also in this case to read the CI-vectors from the binary file 
     read_binary=True
 
 In the case of TDA both options work, for RPA ``read_binary=True`` has to be used.
+
+ORCA - CAS
+__________
+TheoDORE is now also able to parse the Tdens-CAS density matrixes from the combination of the ``orca.densities`` and ``orca.densitiesinfo`` files.
+
+1. Run an ORCA job with "!KeepTransDensity" in the simple input line and copy the ``orca.out``, ``orca.gbw``, ``orca.densities`` and ``orca.densitiesinfo`` files. *Note*: the filenames ``orca.densities`` and ``orca.densitiesinfo`` are hardcoded in TheoDORE.
+
+2. Create a molden file using ``orca_2mkl orca -molden``
+
+3. Run Run ``theodore theoinp`` and select ``14`` at
+
+.. code-block:: text
+
+    Type of job (rtype):
+    ...
+      [13]       orca - ORCA TDDFT (using a Molden file and cclib)
+      [14]    orcaCAS - ORCA CAS (using .molden, .densities and .densitiesinfo)
+    ...
+    Choice: 14
+
+This produces the following options in the input file ``dens_ana.in``
+
+.. code-block:: text
+
+  rtype='orcaCAS'
+  rfile='orca.out'
+  read_binary=True
+  mo_file='orca.molden.input'
+
 
 Gaussian - TDDFT
 ~~~~~~~~~~~~~~~~

@@ -501,9 +501,6 @@ class tden_ana_options(dens_ana_options):
         self['output_file']   = "tden_summ.txt"
         self['prop_list'] = ['Om', 'POS', 'PR', 'CT', 'COH', 'CTnt']
 
-        # exciton analysis options
-        self['Eb_diag'] = 1.0
-
 class sden_ana_options(dens_ana_options):
     """
     Input options for state density analysis.

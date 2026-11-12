@@ -5,7 +5,7 @@ The **TheoDORE** (Theoretical Density, Orbital Relaxation and Exciton analysis) 
 
 *Author*: Felix Plasser
 
-*Contributors*: Ljiljana Stojanovic, Gunter Hermann, Sebastian Mai, Maximilian F.S.J. Menger, Patrick Kimber, Dong Xing
+*Contributors*: Ljiljana Stojanovic, Gunter Hermann, Sebastian Mai, Maximilian F.S.J. Menger, Patrick Kimber, Dong Xing, Sayan Ghosh
 
 TheoDORE is distributed under the GNU General Public License 3.0 (see `LICENSE.txt <https://github.com/felixplasser/theodore-qc/blob/master/LICENSE.txt>`_).
 

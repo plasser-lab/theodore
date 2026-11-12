@@ -685,10 +685,13 @@ class tden_ana(dens_ana_base.dens_ana_base):
 
             state['RMSeh'] = exciton_ana.ret_RMSeh(Om, OmAt)
             state['MAeh']  = exciton_ana.ret_MAeh(Om, OmAt)
-            state['Eb']    = exciton_ana.ret_Eb(Om, OmAt, self.ioptions['Eb_diag'])
+            state['K2']    = exciton_ana.ret_K2(OmAt)
 
             try:
-                state['rTD']   = exciton_ana.ret_rTD(state['QT2'], state['tpop'])
+                state['rTD']  = exciton_ana.ret_rTD(state['QT2'], state['tpop'])
+                state['Vint'] = exciton_ana.ret_Vinter(state['QT2'], state['tpop'])
+                state['Vdiag'] = exciton_ana.ret_Vdiag(state['QT2'], state['tpop'])
+                state['J2'] = exciton_ana.ret_J2(state['QT2'], state['tpop'])
             except KeyError:
                 pass
 #---

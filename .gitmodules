@@ -6,7 +6,7 @@
 	url = https://github.com/felixplasser/orbkit.git
 [submodule "external/colt"]
 	path = external/colt
-	url = https://github.com/MFSJMenger/colt.git
+	url = https://github.com/plasser-lab/colt.git
 [submodule "external/periodictable"]
 	path = external/periodictable
 	url = https://github.com/pkienzle/periodictable.git

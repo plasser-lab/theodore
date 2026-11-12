@@ -60,6 +60,7 @@ class write_options_theo(input_options.write_options):
             ('terachem', 'Terachem (TDDFT)'),
             ('cclib', 'Use external cclib library: Gaussian, GAMESS, ...'),
             ('orca', 'ORCA TDDFT (using a Molden file and cclib)'),
+            ('orcaCAS', 'ORCA CAS (using .molden, .densities and .densitiesinfo)'),
             ('adf', 'ADF (TDDFT)'),
             ('tddftb', 'DFTB+ - TDDFTB'),
             ('dftmrci', 'DFT/MRCI'),
@@ -129,7 +130,7 @@ class write_options_theo(input_options.write_options):
             self['mo_file'] = 'orbs.mld'
             self['coor_file'] = ''
             self['coor_format'] = ''
-        elif self['rtype'] == 'orca':
+        elif self['rtype'] == 'orca' or self['rtype'] == 'orcaCAS':
             self['rfile'] = 'orca.out'
             self['mo_file'] = 'orca.molden.input'
             self['coor_file'] = ''
@@ -191,6 +192,8 @@ class write_options_theo(input_options.write_options):
                 print("     from the control file before running tm2molden.")
         elif self['rtype'] == 'orca':
             self.read_yn('Read the binary orca.cis file?', 'read_binary', True)
+        elif self['rtype'] == 'orcaCAS':
+            self.read_yn('Read the binary orca.densities and orca.densitiesinfo files?', 'read_binary', True)
 
         # switch for DFTMRCI singlet-singlet / singlet-triplet densities
         if self['rtype'] == 'dftmrci':
@@ -428,19 +431,88 @@ class write_options_theo(input_options.write_options):
             if self.ret_yn('Parse 1DDM exciton information from libwfa job?', True):
                 self['prop_list'] += ['dD-A', 'sigD', 'sigA']
 
-    def get_ncore(self):
+    def get_ncore(self, cidrt_file='cidrtmsin'):
+        try:
+            lines = open(cidrt_file).readlines()
+            ncore = self.parse_ncore_from_cidrtmsin(lines)
+
+            self['ncore_dict'] = ncore
+            self.ostr += 'ncore=%s\n' % str(ncore)
+
+            print("Auto-detected frozen core:", ncore)
+            return
+
+        except Exception as e:
+            print("Auto-detection failed, falling back to manual input:", e)
+
         if self.ret_yn('Were there frozen core orbitals in the calculation?', True):
             self['ncore_dict'] = {}
             print("Please enter the irrep label and number of orbitals (separated by spaces), e.g. b1u 5")
             for iirrep in range(1, 32):
-                rstr = self.ret_str('Info for irrep %i'%iirrep)
-                if rstr == '': break
+                rstr = self.ret_str('Info for irrep %i' % iirrep)
+                if rstr == '':
+                    break
 
                 words = rstr.split()
 
                 self['ncore_dict'][words[0]] = int(words[1])
 
-            self.ostr += 'ncore=%s\n'%str(self['ncore_dict'])
+            self.ostr += 'ncore=%s\n' % str(self['ncore_dict'])
+
+
+    def parse_ncore_from_cidrtmsin(self, lines):
+        irreps = []
+        fc_flags = []
+
+        i = 0
+        n_irrep = None
+
+        while i < len(lines):
+            line = lines[i].strip()
+            if "input the number of irreps" in line:
+                try:
+                    n_irrep = int(line.split()[0])
+                except:
+                    pass
+            if "symmetry labels" in line:
+                i += 1
+                break
+            i += 1
+
+        if n_irrep is None:
+            raise ValueError("Could not determine number of irreps")
+
+        for j in range(n_irrep):
+            if i >= len(lines):
+                break
+            token = lines[i].split("/")[0].strip()
+            if token:
+                irreps.append(token)
+            i += 1
+
+        while i < len(lines):
+            line = lines[i].strip()
+            if "frozen core orbitals" in line:
+                clean = line.split("/")[0].strip()
+                if clean:
+                    fc_flags = list(map(int, clean.split()))
+                break
+            i += 1
+
+        idx2irrep = {i + 1: ir for i, ir in enumerate(irreps)}
+
+        #print("DEBUG irreps:", irreps)
+        #print("DEBUG fc_flags:", fc_flags)
+
+        ncore = {ir: 0 for ir in irreps}
+
+        for i in range(0, len(fc_flags), 2):
+            irrep_idx = fc_flags[i]
+            ir = idx2irrep.get(irrep_idx)
+            if ir is not None:
+                ncore[ir] += 1
+
+        return ncore
 
     def output_options(self):
         if self.ret_yn('Adjust detailed output options?', False):

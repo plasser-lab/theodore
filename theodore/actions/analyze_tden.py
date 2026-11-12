@@ -68,7 +68,7 @@ class AnalyzeTden(Action):
         if ioptions['comp_rho0n']: 
             tdena.compute_rho_0_n()
 
-        exc_props = ['RMSeh', 'MAeh', 'Eb', 'rTD']
+        exc_props = ['RMSeh', 'MAeh', 'K2', 'J2', 'rTD', 'Vint', 'Vdiag']
         do_exc = False
         for prop in exc_props:
             if prop in ioptions['prop_list']:

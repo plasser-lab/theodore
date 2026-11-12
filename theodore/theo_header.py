@@ -14,7 +14,7 @@ def ret_header(title=None, ioptions=None, cfile=None, ver='3.2.1'):
     hstr += addlinec()
     hstr += addlinec("Author: Felix Plasser")
     hstr += addlinec("Contributions by: L. Stojanovic, G. Hermann, S. Mai,")
-    hstr += addlinec(" M.F.S.J. Menger, P. Kimber, F. Dinkelbach")
+    hstr += addlinec(" M.F.S.J. Menger, P. Kimber, D. Xing, S. Ghosh, R. G. Bahumanya")
 
     hstr += width*'-' + '\n'
 
@@ -31,9 +31,6 @@ def ret_header(title=None, ioptions=None, cfile=None, ver='3.2.1'):
     hstr += addlinec()
     hstr += addlinel("Program citation:", 3)
     hstr += addlinel("F. Plasser, J. Chem. Phys. (2020), 152, 084108.")
-#    hstr += addlinel("F. Plasser \"TheoDORE %s: a package for theoretical density, orbital"%ver)
-#    hstr += addlinel("relaxation, and exciton analysis\"; available from")
-#    hstr += addlinel("http://theodore-qc.sourceforge.net")
 
     if not title==None:
         hstr += width*'-' + '\n'
@@ -98,7 +95,7 @@ def add_exciton(ioptions):
         rstr += addlinec()
         rstr += addlinel("Conditional densities and DNTOs:", 3)
         rstr += addlinel("F. Plasser")
-        rstr += addlinel("ChemPhotoChem (2019), DOI: 10.1002/cptc.201900014.")
+        rstr += addlinel("ChemPhotoChem (2019), 3, 702.")
 
     return rstr
 
@@ -119,8 +116,8 @@ def add_extra(ioptions):
     if ('QTa' in prop_list) or ('LOC' in prop_list):
         rstr += addlinec()
         rstr += addlinel("Analysis of ionic states:", 3)
-        rstr += addlinel("F. Plasser et al.")
-        rstr += addlinel("in preparation")
+        rstr += addlinel("S. A. do Monte, R. F. K. Spada, et al.")
+        rstr += addlinel("J. Phys. Chem. A, (2023), 127, 9842.")
 
     return rstr
 
@@ -156,13 +153,10 @@ def add_orbkit(ioptions):
     return rstr
 
 def add_VIST(cfile):
-    if not cfile is None:
-        cfileb = os.path.basename(cfile)
-    else:
-        return ''
+    if cfile is None: return ''
 
     rstr = ''
-    if cfileb in ['plot_VIST.py']:
+    if 'vist' in cfile or 'nics' in cfile:
         rstr += addlinec()
         rstr += addlinel("Visualization of chemical shielding tensors (VIST):", 3)
         rstr += addlinel("F. Plasser, F. Gloecklhofer")

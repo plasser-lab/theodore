@@ -269,7 +269,7 @@ class mocoll_occ(mocoll):
             occnum = self.moset.ens[imo]
         else:
             occnum = self.moset.occs[imo]
-        return occnum < 0
+        return occnum < 0 or occnum > 1
 
 class jmol_options(input_options.write_options):
     def jmol_input(self, nfiles=1):

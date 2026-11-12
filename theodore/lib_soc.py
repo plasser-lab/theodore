@@ -137,7 +137,7 @@ class tden_ana_soc(lib_tden.tden_ana):
             self.compute_all_OmFrag()
             if self.ioptions['print_OmFrag']:
                 self.fprint_OmFrag('%s_OmFrag.txt'%pre)
-        if 'RMSeh' in self.ioptions.get('prop_list') or 'MAeh' in self.ioptions.get('prop_list') or 'Eb' in self.ioptions.get('prop_list'):
+        if 'RMSeh' in self.ioptions.get('prop_list') or 'MAeh' in self.ioptions.get('prop_list') or 'K2' in self.ioptions.get('prop_list'):
             exca = lib_exciton.exciton_analysis()
             exca.get_distance_matrix(self.struc)
             self.analyze_excitons(exca)

@@ -90,6 +90,8 @@ class dens_ana_base:
             self.state_list = file_parser.file_parser_nos(self.ioptions).read(self.mos)
         elif rtype == 'orca':
             self.state_list = file_parser.file_parser_orca(self.ioptions).read(self.mos)
+        elif rtype == 'orcacas':
+            self.state_list = file_parser.file_parser_orca_CAS(self.ioptions).read(self.mos)
         elif rtype in ['cclib', 'gamess']:
             # these are parsed with the external cclib library
             ccli = cclib_interface.file_parser_cclib(self.ioptions)

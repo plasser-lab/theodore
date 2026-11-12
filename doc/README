@@ -1,5 +1,11 @@
 Download the newest TheoDORE release and tutorial.
 
+- VIST plots with Dalton
+- Unrestricted TDDFT with Turbomole
+- CASSCF with Orca
+- Improvements for spectrum.py
+- Update tools (colt, orbkit)
+
 TheoDORE 3.2.1
 - Include Q-Chem SF-TDDFT
 - Conditional densities for unrestricted calcs

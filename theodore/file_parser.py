@@ -364,95 +364,234 @@ from the control file.""")
 
 class file_parser_escf(file_parser_base):
     """
-    Turbomole TDDFT
+    Turbomole TDDFT.
+
+    Updated by M.Romanelli (May 2026):  unrestricted calculations are supported now.
     """
     def read(self, mos):
-        state_list = self.ret_conf_tddft(rfile=self.ioptions.get('rfile'))
+        state_list, restr, act_occ, act_virt = self.ret_conf_tddft(rfile=self.ioptions.get('rfile'))
 
-        nocc={}
-        nvirt={}
+        #print("DEBUG:",restr,act_virt,act_occ)
+        #print("DEBUG:",state_list)
 
-        for state in state_list:
-            state['name'] = '%i%s'%(state['state_ind'],state['irrep'])
-            state['tden'] = self.init_den(mos, rect=True)
+        if restr:  #RKS/RHF response calculations
+            nocc={}
+            nvirt={}
+            for state in state_list:
+                state['name'] = '%i%s'%(state['state_ind'],state['irrep'])
+                state['tden'] = self.init_den(mos, rect=True)
+                occmap  = []
+                virtmap = []
+                for iorb, sym in enumerate(mos.syms):
+                    if state['irrep'] in sym:
+                        occ = mos.occs[iorb]
+                        if abs(occ-2.) < 1.e-4:
+                            occmap.append(iorb)
+                        elif abs(occ) < 1.e-4:
+                            virtmap.append(iorb)
+                        else:
+                            print(" Error: invalid occupation!", occ)
+                            exit(5)
 
-            occmap  = []
-            virtmap = []
-            for iorb, sym in enumerate(mos.syms):
-                if state['irrep'] in sym:
-                    occ = mos.occs[iorb]
-                    if abs(occ-2.) < 1.e-4:
-                        occmap.append(iorb)
-                    elif abs(occ) < 1.e-4:
-                        virtmap.append(iorb)
-                    else:
-                        print(" Error: invalid occupation!", occ)
-                        exit(5)
+                nocc=len(occmap)
+                nvirt=len(virtmap)
 
-            nocc=len(occmap)
-            nvirt=len(virtmap)
+                print("\n Considering state: %s"%state['name'])
+                print("  Number of occupied orbitals:", nocc)
+                print("  Number of virtual orbitals:", nvirt)
+                print("  Tensor space dimension:", nocc*nvirt)
 
-            print("\n Considering state: %s"%state['name'])
-            print("  Number of occupied orbitals:", nocc)
-            print("  Number of virtual orbitals:", nvirt)
-            print("  Tensor space dimension:", nocc*nvirt)
+                if os.path.exists('sing_%s'%state['irrep']):
+                    readf = 'sing_%s'%state['irrep']
+                    print('  Reading information of singlet calculation from file %s'%readf)
+                elif os.path.exists('trip_%s'%state['irrep']):
+                    readf = 'trip_%s'%state['irrep']
+                    print('  Reading information of triplet calculation from file %s'%readf)
+                elif self.ioptions['TDA'] and os.path.exists('ciss_%s'%state['irrep']):
+                    readf = 'ciss_%s'%state['irrep']
+                    print('  Reading information of TDA singlet calculation from file %s'%readf)
+                elif self.ioptions['TDA'] and os.path.exists('cist_%s'%state['irrep']):
+                    readf = 'cist_%s'%state['irrep']
+                    print('  Reading information of TDA triplet calculation from file %s'%readf)
+                else:
+                    print('No file with information about the excited state (sing_a, trip_a, ...) found!')
+                    exit(7)
 
-            if os.path.exists('sing_%s'%state['irrep']):
-              readf = 'sing_%s'%state['irrep']
-              print('  Reading information of singlet calculation from file %s'%readf)
-            elif os.path.exists('trip_%s'%state['irrep']):
-              readf = 'trip_%s'%state['irrep']
-              print('  Reading information of triplet calculation from file %s'%readf)
-            elif os.path.exists('ciss_%s'%state['irrep']):
-              readf = 'ciss_%s'%state['irrep']
-              print('  Reading information of TDA singlet calculation from file %s'%readf)
-            elif os.path.exists('cist_%s'%state['irrep']):
-              readf = 'cist_%s'%state['irrep']
-              print('  Reading information of TDA triplet calculation from file %s'%readf)
-            else:
-              print('No file with information about the excited state (sing_a, trip_a, ...) found!')
-              exit(7)
+                # the file is parsed once for every state
+                # this is not efficient but also not critical
+                # Note that this routine for non-TDA only reads X vector!
+                curr_state = 0
+                for line in open(readf):
+                    if 'tensor space dimension' in line:
+                        words = line.split()
+                        space_dim = int(words[-1])
+                        assert(nocc*nvirt == space_dim)
+                    elif 'eigenvalue' in line:
+                        words = line.split()
+                        curr_state = float(words[0])
+                        iiocc  = 0
+                        iivirt = 0
+                    elif curr_state == state['state_ind']:
+                        words = [line[0+20*i:20+20*i] for i in range(4)]
+                        for word in words:
+                            state['tden'][occmap[iiocc],virtmap[iivirt]] = float(word.replace('D','E'))
+                            iivirt+=1
+                            if iivirt == nvirt:
+                                iivirt = 0
+                                iiocc += 1
+                                if iiocc == nocc:
+                                    curr_state = 0
+                                    break
+                    elif curr_state > state['state_ind']: break
+ 
+        else: #UKS/UHF
+            alpha_channel=(self.ioptions['spin'] >= 0)
+            nocc={}
+            nvirt={}
+            for state in state_list:
+                state['name'] = '%i%s'%(state['state_ind'],state['irrep'])
+                state['tden'] = self.init_den(mos, rect=True)
+                occmap  = []
+                virtmap = []
+                for iorb, sym in enumerate(mos.syms):
+                    if state['irrep'] in sym:
+                        occ = mos.occs[iorb]
+                        if abs(occ-1.) < 1.e-4:
+                            occmap.append(iorb)
+                        elif abs(occ) < 1.e-4:
+                            virtmap.append(iorb)
+                        else:
+                            print(" Error: invalid occupation!", occ)
+                            exit(5)
+                nocc=len(occmap)
+                nvirt=len(virtmap)
 
-            # the file is parsed once for every state
-            #   this is not efficient but also not critical
-            curr_state = 0
-            for line in open(readf):
-                if 'tensor space dimension' in line:
-                    words = line.split()
-                    space_dim = int(words[-1])
-                    assert(nocc*nvirt == space_dim)
-                elif 'eigenvalue' in line:
-                    words = line.split()
-                    curr_state = float(words[0])
-                    iiocc  = 0
-                    iivirt = 0
-                elif curr_state == state['state_ind']:
-                    words = [line[0+20*i:20+20*i] for i in range(4)]
-                    for word in words:
-                        state['tden'][occmap[iiocc],virtmap[iivirt]] = float(word.replace('D','E'))
+                print("\n Considering state: %s"%state['name'])
+                if alpha_channel:
+                    print("  Number of occupied alpha orbitals:", nocc)
+                    print("  Number of virtual alpha orbitals:", nvirt)
+                    print("  Tensor space dimension (alpha):", nocc*nvirt)
+                    assert(act_occ[0]==nocc)
+                    assert(act_virt[0]==nvirt)
+                else:
+                    print("  Number of occupied beta orbitals:", nocc)
+                    print("  Number of virtual beta orbitals:", nvirt)
+                    print("  Tensor space dimension (beta):", nocc*nvirt)
+                    assert(act_occ[1]==nocc)
+                    assert(act_virt[1]==nvirt)
 
-                        iivirt+=1
-                        if iivirt == nvirt:
-                            iivirt = 0
-                            iiocc += 1
-                            if iiocc == nocc:
-                                curr_state = 0
-                                break
-                elif curr_state > state['state_ind']: break
+                if os.path.exists('unrs_%s'%state['irrep']):
+                    readf = 'unrs_%s'%state['irrep']
+                    print('  Reading information of unrestricted calculation from file %s'%readf)
+                elif self.ioptions['TDA'] and os.path.exists('ucis_%s'%state['irrep']):
+                    readf = 'ucis_%s'%state['irrep']
+                    print('  Reading information of TDA unrestricted calculation from file %s'%readf)
+                else:
+                    print('No file with information about the excited state (sing_a, trip_a, ...) found!')
+                    exit(7)
+
+                curr_state = 0
+                itdm = 0  # global index across alpha+beta blocks
+                n_a = act_occ[0] * act_virt[0] #alpha space dimension (from turbomole directly)
+                n_b = act_occ[1] * act_virt[1] #beta space dimension (from turbomole directly)
+                n_total = n_a + n_b
+                for line in open(readf):
+                    if 'tensor space dimension' in line:
+                        words = line.split()
+                        space_dim = int(words[-1])
+                        assert(n_total == space_dim)
+                    elif 'eigenvalue' in line:
+                        words = line.split()
+                        curr_state = float(words[0])
+                        iiocc = 0
+                        iivirt = 0
+                        itdm = 0  # reset global counter for new eigenstate
+                    elif curr_state == state['state_ind']:
+                        words = [line[20*i:20*(i+1)] for i in range(4)]
+                        for word in words:
+                            val = float(word.replace('D', 'E'))
+                            #If TDA, unrs_a etc. store only X vectors
+                            if self.ioptions['TDA']==True:
+                                # only process the block we actually want
+                                if alpha_channel and itdm >= n_a:
+                                    itdm += 1
+                                    continue   #we skip the beta block since we are running alpha channel
+                                if not alpha_channel and itdm < n_a:
+                                    itdm += 1
+                                    continue   #we skip the alpha block since we are running beta channel
+                            else:
+                                if alpha_channel and itdm >= 2*n_a: #double size cause both X and Y are printed out in unrs_
+                                    itdm += 1
+                                    continue   #we skip the beta block since we are running alpha channel
+                                if not alpha_channel and itdm < 2*n_a:
+                                    itdm += 1
+                                    continue   #we skip the alpha block since we are running beta channel
+                            #This only reads X vector anyway, as done for RKS.
+                            state['tden'][occmap[iiocc], virtmap[iivirt]] = val
+                            iivirt += 1
+                            if iivirt == nvirt:
+                                iivirt = 0
+                                iiocc += 1
+                                if iiocc == nocc:
+                                    curr_state = 0
+                                    break
+                            itdm += 1
+                    elif curr_state > state['state_ind']:
+                        break
 
         return state_list
 
     def ret_conf_tddft(self, rfile):
+
+        # #Checking first which TURBOMOLE version is used. Output of MOs info changed from V8.0 unfortunately!
+        # header=open(rfile,'r').readlines()[0:20]
+        # version = None
+        # for line in header:
+        #     m = re.search(r'TURBOMOLE rev\.\s*V(\d+)-', line)
+        #     if m:
+        #         version = int(m.group(1))
+        #         break
+
         rlines = open(rfile, 'r').readlines()[100:]
         ret_list = []
         occ_orb = False # section of the file
+        restr = True #Default is restricted (RKS/RHF) calculations. Check in  turbomole output later
+        act_occ=[] #List for active occupied out of turbomole output
+        act_virt=[] #List for virtual occupied out of turbomole output
+
         for nr,line in enumerate(rlines):
+            #Checking for UKS/UHF
+            if 'CI SINGLES UHF-CALCULATION (spin-conserved)' in line or 'RPA UHF-EXCITATION-CALCULATION (spin-conserved)' in line:
+                restr=False
+                print("Detected unrestricted calculation. unrs_a or ucis_a files will be searched for.")
+            # Checking for TDA
+            if '(TAMM-DANCOFF-APPROXIMATION)' in line:
+                self.ioptions['TDA']=True
+                print("Detected TDA approximation.")
+            # Reading n. of occupied and virtual orbitals for UKS or RKS. 
+            # if version > 7: #Older TURBOMOLE versions have different output for MOs summary
+            #     if restr is False and 'orbitals in total:  alpha spin   beta spin' in line:
+            #         act_occ.extend(map(int, rlines[nr+3].split()[-2:]))
+            #         act_virt.extend(map(int, rlines[nr+4].split()[-2:]))
+            #     elif restr is True and 'orbitals in total:' in line:
+            #         act_occ.append(int(rlines[nr+3].split()[-1]))
+            #         act_virt.append(int(rlines[nr+4].split()[-1]))
+            # else:
+            if 'number of non-frozen orbitals' in line:
+                    tmp_orb=int(line.split()[-1]) #Total n. of active orbitals (either alpha or beta channel)
+                    tmp_occ=int(rlines[nr+1].split()[-1]) # Total n. of acive occupied orbitals (either alpha or beta channel)
+                    act_occ.append(tmp_occ)
+                    act_virt.append(tmp_orb-tmp_occ)
+            #Extracting excitations
             if 'excitation' in line and not 'vector' in line and not 'energies' in line:
                 ret_list.append({})
                 words = line.split()
                 ret_list[-1]['state_ind'] = int(words[0])
                 #ret_list[-1]['irrep'] = file_handler.line_to_words(line)[2]
-                ret_list[-1]['irrep'] = words[2]
+                if restr:
+                    ret_list[-1]['irrep'] = words[2]
+                else:
+                    ret_list[-1]['irrep'] = words[1]
                 ret_list[-1]['tot_en'] = eval(rlines[nr+3][40:])
                 ret_list[-1]['exc_en'] = eval(rlines[nr+7][40:])
                 ret_list[-1]['osc_str'] = eval(rlines[nr+16][40:])
@@ -465,15 +604,23 @@ class file_parser_escf(file_parser_base):
                 #print words
                 if len(words) > 0:
                     #print 'words > 0'
-                    ret_list[-1]['char'].append({})
-                    ret_list[-1]['char'][-1]['occ'] = words[0]+words[1]
-                    ret_list[-1]['char'][-1]['virt'] = words[3]+words[4]
-                    ret_list[-1]['char'][-1]['weight'] = float(words[-1])/100.
-                    # escf does not print the phase of the coefficient
+                    if restr:
+                        ret_list[-1]['char'].append({})
+                        ret_list[-1]['char'][-1]['occ'] = words[0]+words[1]
+                        ret_list[-1]['char'][-1]['virt'] = words[3]+words[4]
+                        ret_list[-1]['char'][-1]['weight'] = float(words[-1])/100.
+                        # escf does not print the phase of the coefficient
+                    else:
+                        ret_list[-1]['char'].append({})
+                        ret_list[-1]['char'][-1]['occ'] = words[0] + words[1]
+                        ret_list[-1]['char'][-1]['occ_spin'] = words[2]
+                        ret_list[-1]['char'][-1]['virt'] = words[4] + words[5]
+                        ret_list[-1]['char'][-1]['virt_spin'] = words[6]
+                        ret_list[-1]['char'][-1]['weight'] = float(words[-1]) / 100.
                 else:
                     occ_orb = False
 
-        return ret_list
+        return ret_list,restr,act_occ,act_virt
 
 #---
 
@@ -2140,4 +2287,117 @@ class file_parser_orca(file_parser_base):
                 state['tden'][nfrzc:nocc, nocc:nmo] += numpy.reshape(coeff, [nact,nvir])
                 state['tden'][nfrzc:nocc, nocc:nmo] *= .5
 
+        return state_list
+
+class file_parser_orca_CAS(file_parser_base):
+
+    def read(self, mos):
+        return self.tden_orca(mos, False)
+
+    def tden_orca(self, mos, rect_dens, filen1='orca.densities', filen2='orca.densitiesinfo'):
+        '''
+        as far as i found out by looking into multiple files produced by orca6.1 each section has length of 661 bytes starting
+        with a nul terminated string representing that densities name. The header seed to variied in length. It might be also due 
+        the presents of a nul terminated string starting at byte 4 in the data.
+        The first 4 bytes seem to be a uint32/int32 stating the number of available densities.
+
+        '''
+        state_list = []
+
+        outFile = open(self.ioptions['rfile'], 'r')
+        startRead = False
+        for l in outFile:
+            if startRead:
+                if l =="\n":
+                    startRead = False
+                    continue
+
+                words = l.split()
+                state = {'mult': int(words[2].split("-")[1][0]), 'irrep': words[2].split("-")[1][1:], 'state_ind': int(words[2].split("-")[0]), 'exc_en': float(words[3])}
+                state['name'] = '%i(%i)%s'%(state['state_ind'], state['mult'] ,state['irrep'])
+                state_list.append(state)
+                
+            elif "                     ABSORPTION SPECTRUM VIA TRANSITION ELECTRIC DIPOLE MOMENTS    \n" == l:
+                [next(outFile) for i in range(4)]
+                state_list = []
+                startRead=True
+            
+
+        dens_info = open(filen2, 'rb')
+        data = dens_info.read()
+        dens_info.close()
+        file_size = len(data)
+        n_sections = struct.unpack('<i', data[:4])[0]
+        header_len = file_size - 661 * n_sections
+        header = data[:header_len]
+
+        parse_instructions = []
+        for i, d in enumerate([data[i : i + 661] for i in range(header_len, len(data), 661)]):
+            name_end = d.find(b'\x00')
+            
+            if name_end != -1:
+                section_name = d[0:name_end].decode('utf-8', errors='ignore')
+            else:
+                section_name = "UNKNOWN_SECTION"
+
+            descript_pos = d.find(b'\xff\xff\xff\xff\xff\xff\xff\xff') + 8
+
+            ambiguous_bytes = d[descript_pos + 8 : descript_pos + 13]     
+            if ambiguous_bytes != b'\x08\x00\x00\x00\x00':
+                print(f'Notice: Ambiguous bytes changed at section {i}: {ambiguous_bytes.hex()}')
+            
+            # in all files i looked the 661 byte long regions starts a 8 byte long FF terminater starting at byte 520, than based on the nuls in the hex
+            # there seed to be multiple int32s and int64s in that region afterwords. The only important here are the first two int32 after the terminator
+            # as these provide the size of the corresponding matrix in .densities. i am not sure which is row and which is call as in all my files they
+            # where square matrixes, i still parse out all the numbers i think i found but i will only use the two mentioned
+            int32_block = d[descript_pos : descript_pos + 8] + d[descript_pos + 13 : descript_pos + 37]
+            int64_block = d[descript_pos + 37:]
+            assert len(int32_block) == 32, len(int32_block)
+            assert len(int64_block) == 96, len(int64_block)
+            
+            unpacked_uint32s = struct.unpack('<IIIIIIII', int32_block)
+            unpacked_uint64s = struct.unpack('<QQQQQQQQQQQQ', int64_block)
+            
+            # selecting only the transition densities starting from the ground root 
+            if ("Tdens-CAS-" in section_name) and (section_name.split('-')[4]=="0") and (section_name.split('-')[5]!="0"):
+                parse_instructions.append((unpacked_uint32s[0], unpacked_uint32s[1]))
+                print(section_name)
+            else:
+                parse_instructions.append(unpacked_uint32s[0] * unpacked_uint32s[1])
+
+
+        # starting here i will actually parse the .densities file. When using a double for each value expected by the matrix sizes gained from the the
+        # densitiesinfo, the length of the densities file fits exactly.
+        bytes_per_value = 8
+        densfile = open(filen1, 'rb')
+
+        print(f"found {len(state_list)} states")
+        i = 0
+        for item in parse_instructions:
+            if isinstance(item, int):
+                densfile.seek(bytes_per_value * item, 1)
+            elif isinstance(item, tuple):
+                rows, cols = item # might be flipped. In my data only square matrixes where present."
+                bytes_to_read = bytes_per_value * rows * cols 
+                raw = densfile.read(bytes_to_read)
+
+                if len(raw) != bytes_to_read:
+                    raise EOFError(f"Unexpected end of file while reading matrix of size {rows}x{cols}. Expected {bytes_to_read} bytes, but got {len(raw)} bytes.")
+
+                D_AO = numpy.frombuffer(raw, dtype=numpy.float64).reshape((rows,cols))
+                temp   = mos.CdotD(D_AO.T, trnsp=False, inv=True)   # C⁻¹ @ D_AOᵀ      → (nmo × nbas)
+                D_MO   = mos.MdotC(temp, trnsp=True, inv=True)      # C⁻¹ @ D_AOᵀ @ C⁻ᵀ  → (nmo × nmo)
+                state_list[i]['tden'] = D_MO
+                i += 1
+
+        # just doing some sanity check that everything was as expected and we now reached the end of the densities file.
+        extra_byte = densfile.read(1)
+        if extra_byte != b'':
+            current_pos = densfile.tell() - 1  
+            densfile.seek(0, 2)               
+            total_size = densfile.tell()
+            remaining_bytes = total_size - current_pos
+            
+            raise ValueError(f"Layout fully processed, but the end of the file was not reached! There are still {remaining_bytes} unparsed bytes left in '{filen1}'.")
+            
         return state_list
